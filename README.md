@@ -12,4 +12,4 @@ The links are injected via zero-width spaces.
 The rules are also uploaded to this repo in the `iv-rules.txt` file.
 However, the rules are not perfect yet.
 If you know Instant View or are able to write some XPath 1.0, please help out.
-#1 is used to track progress for this.
+https://github.com/grammyjs/docs-bot/issues/1 is used to track progress for this.
