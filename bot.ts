@@ -3,17 +3,17 @@ import {
   Bot,
   InlineKeyboard,
   webhookCallback,
-} from "https://deno.land/x/grammy@v1.4.3/mod.ts";
+} from "https://deno.land/x/grammy@v1.5.3/mod.ts";
 import { serve } from "https://deno.land/std@0.116.0/http/server.ts";
 import {
   InlineQueryResultArticle,
   MessageEntity,
-} from "https://deno.land/x/grammy@v1.4.3/platform.deno.ts";
+} from "https://deno.land/x/grammy@v1.5.3/platform.deno.ts";
 
 const ZWSP = "\u200b"; // zero-width space character
 
-const APPLICATION_ID = "BH4D9OD16A";
-const API_KEY = "17b3527aa6f36e8d3fe2276b0f4d9633";
+const APPLICATION_ID = "RBF5Q0D7QV";
+const API_KEY = "1d0adc6891f310ef33db7a8a2bab513d";
 
 const SEARCH_HOST = `https://${APPLICATION_ID}-dsn.algolia.net`;
 const SEARCH_INDEX = "grammy";
