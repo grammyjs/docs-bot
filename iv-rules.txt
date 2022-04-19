@@ -1,4 +1,5 @@
 ~version: "2.1"
+~allowed_origin: "https://grammy.dev"
 
 # Define paths structures
 ?path: /(zh/)?guide/.*
@@ -16,10 +17,35 @@ channel: "@grammyjs_news"
 body:    //main
 # Just gotta fix some spacing in code blocks ...
 @replace("\n$", ""): //code
-# ... and rewrite links to stay within IV.
-@replace("^/", "https://t.me/iv?rhash=ca1d23e111bcad&url=https%3A%2F%2Fgrammy.dev%2F"): //a/@href
+# ... and rewrite links to stay within IV ...
+@replace("^/", "https://t.me/iv?rhash=d32ab671cec0eb&url=https%3A%2F%2Fgrammy.dev%2F"): //a/@href
+# ... as well as adding anchors
+@set_attr(name, @href): //a[has-class("header-anchor")]
+@replace("^#", ""): $$/@name # strip leading hash for anchor name
 
 @detach: //span[has-class("prev")] # fix prev/next links, same as: @detach: //span[has-class("next")]
 @remove: //span[has-class("sr-only")] # no sr content
-@remove: //a[has-class("header-anchor")] # remove header links
 @remove: //div[has-class("line-numbers")] # remove line number blocks
+
+# group code-group-items with their title
+# TypeScript > Code, JavasScript > Code
+@replace_tag(<details>): //div[has-class("code-group-item")]
+@replace_tag(<summary>): //ul[@class="code-group__ul"]/li
+
+@map( //details[has-class("code-group-item")] ) {
+  $det: $@
+  @prepend_to($det): (//ul[@class="code-group__ul"]/summary)[position()<2]
+}
+
+# Converts tip, warning, danger blocks to details
+@replace_tag(<details>): //div[has-class("tip")]
+@replace_tag(<details>): //div[has-class("warning")]
+@replace_tag(<details>): //div[has-class("danger")]
+# set their title as title of <details>
+@replace_tag(<summary>): //p[has-class("custom-container-title")]
+
+# Move <img> from <p> to outside
+@split_parent: //p/img
+
+# bold titles for of <details>
+@wrap_inner(<b>): //summary
