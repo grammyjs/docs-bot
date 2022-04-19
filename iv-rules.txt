@@ -9,6 +9,7 @@
 ?path: /(zh/)?hosting/.*
 
 # Title is always the only h1 element
+@replace("#", ""): //h1
 title:  //h1
 site_name: "grammY Docs"
 channel: "@grammyjs_news"
