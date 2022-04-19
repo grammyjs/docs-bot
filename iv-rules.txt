@@ -41,10 +41,15 @@ body:    //main
   } 
 }
 
+
 # Converts tip, warning, danger blocks to details
 @replace_tag(<details>): //div[has-class("tip")]
+@set_attr(open, 1): $$
 @replace_tag(<details>): //div[has-class("warning")]
+@set_attr(open, 1): $$
 @replace_tag(<details>): //div[has-class("danger")]
+@set_attr(open, 1): $$
+
 # set their title as title of <details>
 @replace_tag(<summary>): //p[has-class("custom-container-title")]
 
