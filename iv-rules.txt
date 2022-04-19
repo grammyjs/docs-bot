@@ -23,6 +23,9 @@ body:    //main
 # ... as well as adding anchors
 @set_attr(name, @href): //a[has-class("header-anchor")]
 @replace("^#", ""): $$/@name # strip leading hash for anchor name
+# ... and adding data-language attribute to pre
+@set_attr(data-language, @class): //pre
+@replace("language-", ""): $$/@data-language
 
 @detach: //span[has-class("prev")] # fix prev/next links, same as: @detach: //span[has-class("next")]
 @remove: //span[has-class("sr-only")] # no sr content
