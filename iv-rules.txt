@@ -19,7 +19,7 @@ body:    //main
 # Just gotta fix some spacing in code blocks ...
 @replace("\n$", ""): //code
 # ... and rewrite links to stay within IV ...
-@replace("^/", "https://t.me/iv?rhash=d32ab671cec0eb&url=https%3A%2F%2Fgrammy.dev%2F"): //a/@href
+@replace("^/", "https://t.me/iv?rhash=ca1d23e111bcad&url=https%3A%2F%2Fgrammy.dev%2F"): //a/@href
 # ... as well as adding anchors
 @set_attr(name, @href): //a[has-class("header-anchor")]
 @replace("^#", ""): $$/@name # strip leading hash for anchor name
@@ -34,8 +34,11 @@ body:    //main
 @replace_tag(<summary>): //ul[@class="code-group__ul"]/li
 
 @map( //details[has-class("code-group-item")] ) {
-  $det: $@
-  @prepend_to($det): (//ul[@class="code-group__ul"]/summary)[position()<2]
+  $details: $@
+  @prepend_to($details): (//ul[@class="code-group__ul"]/summary)[position()<2]
+  @if ($details[has-class("code-group-item__active")]) {
+    @set_attr(open, 1): $details
+  } 
 }
 
 # Converts tip, warning, danger blocks to details
