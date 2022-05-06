@@ -15,23 +15,28 @@ site_name: "grammY Docs"
 channel: "@grammyjs_news"
 
 # Simply picking up main does most of the work
-body:    //main
+body: //main
 # Just gotta fix some spacing in code blocks ...
 @replace("\n$", ""): //code
 # ... and rewrite links to stay within IV ...
 @replace("^/", "https://t.me/iv?rhash=ca1d23e111bcad&url=https%3A%2F%2Fgrammy.dev%2F"): //a/@href
-# ... as well as adding anchors
+# ... as well as adding anchors ...
 @set_attr(name, @href): //a[has-class("header-anchor")]
-@replace("^#", ""): $$/@name # strip leading hash for anchor name
+# ... and stripping leading hashes for anchor names ...
+@replace("^#", ""): $$/@name
+# ... along with "open in new window" hints from links ...
+@remove: //a/span
 # ... and adding data-language attribute to pre
 @set_attr(data-language, @class): //pre
 @replace("language-", ""): $$/@data-language
 
-@detach: //span[has-class("prev")] # fix prev/next links, same as: @detach: //span[has-class("next")]
-@remove: //span[has-class("sr-only")] # no sr content
-@remove: //div[has-class("line-numbers")] # remove line number blocks
+# We also fix prev/next links ...
+@detach: //span[has-class("prev")] # same as: @detach: //span[has-class("next")]
+# ... and remove sr content and line number blocks ...
+@remove: //span[has-class("sr-only")]
+@remove: //div[has-class("line-numbers")]
 
-# group code-group-items with their title
+# Then, we group code-group-items with their titles:
 # TypeScript > Code, JavasScript > Code
 @replace_tag(<details>): //div[has-class("code-group-item")]
 @replace_tag(<summary>): //ul[@class="code-group__ul"]/li
@@ -44,8 +49,7 @@ body:    //main
   } 
 }
 
-
-# Converts tip, warning, danger blocks to details
+# Convert tip, warning, danger blocks to details ...
 @replace_tag(<details>): //div[has-class("tip")]
 @set_attr(open, 1): $$
 @replace_tag(<details>): //div[has-class("warning")]
@@ -53,11 +57,11 @@ body:    //main
 @replace_tag(<details>): //div[has-class("danger")]
 @set_attr(open, 1): $$
 
-# set their title as title of <details>
+# ... and set their title as title of <details>.
 @replace_tag(<summary>): //p[has-class("custom-container-title")]
 
-# Move <img> from <p> to outside
+# Move <img> from <p> to outside ...
 @split_parent: //p/img
 
-# bold titles for of <details>
+# ... and apply bold titles for of <details>.
 @wrap_inner(<b>): //summary
