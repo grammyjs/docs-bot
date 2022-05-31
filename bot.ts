@@ -19,6 +19,8 @@ const SEARCH_HOST = `https://${APPLICATION_ID}-dsn.algolia.net`;
 const SEARCH_INDEX = "grammy";
 const SEARCH_URL = `${SEARCH_HOST}/1/indexes/${SEARCH_INDEX}/query`;
 
+const DOCUMENTATION_URL = "https://grammy.dev";
+
 const token = Deno.env.get("BOT_TOKEN");
 if (token === undefined) throw new Error("Missing BOT_TOKEN");
 
@@ -46,12 +48,27 @@ async function search(query: string) {
   return await res.json();
 }
 
+const replacementRegex = /\+([^\+]+)\+/g;
+
 bot.on("inline_query", async (ctx) => {
   const query = ctx.inlineQuery.query;
+  const results = new Array<InlineQueryResultArticle>();
+  if (query.match(replacementRegex)) {
+    const [message_text, entities, description] = makeReplacements(query);
+    results.push(
+      {
+        id: crypto.randomUUID(),
+        type: "article",
+        title: "Make replacements",
+        description,
+        input_message_content: { message_text, entities },
+      },
+    );
+  }
   const { hits } = await search(query);
   hits.length = Math.min(50, hits.length);
   await ctx.answerInlineQuery(
-    hits.map((h: any): InlineQueryResultArticle => {
+    results.concat(hits.map((h: any): InlineQueryResultArticle => {
       const { title, iv, url } = getText(h, !h.hierarchy.lvl2);
       const message_text = `${title}${ZWSP}\n\n${url}`;
       const entities: MessageEntity[] = [
@@ -67,7 +84,7 @@ bot.on("inline_query", async (ctx) => {
         }`,
         input_message_content: { message_text, entities },
       };
-    }),
+    })),
     { cache_time: 24 * 60 * 60 }, // 24 hours (algolia re-indexing)
   );
 });
@@ -95,4 +112,26 @@ function getText(hit: any, strip: boolean) {
 function stripAnchor(url: string) {
   const index = url.lastIndexOf("#");
   return index > 0 ? url.substring(0, index) : url;
+}
+
+function makeReplacements(text: string): [string, MessageEntity[], string] {
+  let matches = 0;
+  const entities = new Array<MessageEntity>();
+  const pathnames = new Array<string>();
+  return [
+    text.replace(replacementRegex, (_, s, o) => {
+      const url = new URL(s, DOCUMENTATION_URL);
+      pathnames.push(url.pathname);
+      entities.push({
+        offset: matches == 0 ? o : o - (matches * 2),
+        length: s.length,
+        type: "text_link",
+        url: url.href,
+      });
+      matches++;
+      return s;
+    }),
+    entities,
+    pathnames.join(", "),
+  ];
 }
