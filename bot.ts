@@ -4,7 +4,7 @@ import {
   InlineKeyboard,
   webhookCallback,
 } from "https://deno.land/x/grammy@v1.8.3/mod.ts";
-import { serve } from "https://deno.land/std@0.138.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.141.0/http/server.ts";
 import {
   InlineQueryResultArticle,
   MessageEntity,
@@ -40,8 +40,8 @@ const headers = {
   "X-Algolia-Application-Id": APPLICATION_ID,
 };
 async function search(query: string) {
-  const payload = { params: `query=${query}&facetFilters=["lang:en-US"]` };
-  const body = enc.encode(JSON.stringify(payload));
+  const params = new URLSearchParams({ query, facetFilters: '["lang:en-US"]' });
+  const body = enc.encode(JSON.stringify({ params: params.toString() }));
   const res = await fetch(SEARCH_URL, { method: "POST", headers, body });
   return await res.json();
 }
