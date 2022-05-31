@@ -40,11 +40,8 @@ const headers = {
   "X-Algolia-Application-Id": APPLICATION_ID,
 };
 async function search(query: string) {
-  const payload = {
-    params: new URLSearchParams({ query, facetFilters: '["lang:en-US"]' })
-      .toString(),
-  };
-  const body = enc.encode(JSON.stringify(payload));
+  const params = new URLSearchParams({ query, facetFilters: '["lang:en-US"]' });
+  const body = enc.encode(JSON.stringify({ params: params.toString() }));
   const res = await fetch(SEARCH_URL, { method: "POST", headers, body });
   return await res.json();
 }
