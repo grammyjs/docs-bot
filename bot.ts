@@ -39,35 +39,51 @@ const headers = {
   "X-Algolia-API-Key": API_KEY,
   "X-Algolia-Application-Id": APPLICATION_ID,
 };
-async function search(query: string): Promise<{ hits: Hit[] }> {
+async function search(query: string) {
   const params = new URLSearchParams({ query, facetFilters: '["lang:en-US"]' });
   const body = enc.encode(JSON.stringify({ params: params.toString() }));
   const res = await fetch(SEARCH_URL, { method: "POST", headers, body });
   return await res.json();
 }
-interface Hit {
-  objectID: string;
-  content: string;
-  url: string;
-  hierarchy: Record<`lvl${1 | 2 | 3 | 4 | 5 | 6}`, string>;
-}
+
+const replacementExp = /\+([^+]+(?:\|[^+]|))\+/g;
 
 bot.on("inline_query", async (ctx) => {
-  const match = matchQuery(ctx.inlineQuery.query);
-  const { hits } = await search(match.query);
+  const query = ctx.inlineQuery.query;
+  const results = new Array<InlineQueryResultArticle>();
+  if (query.match(replacementExp)) {
+    const [message_text, entities, description] = await makeReplacements(query);
+    results.push(
+      {
+        id: crypto.randomUUID(),
+        type: "article",
+        title: "Make replacements",
+        description,
+        input_message_content: { message_text, entities },
+      },
+    );
+  }
+  const { hits } = await search(whatToSearch(query));
   hits.length = Math.min(50, hits.length);
   await ctx.answerInlineQuery(
-    hits.map((hit): InlineQueryResultArticle => {
-      const { title, description, text, entities } = renderMessage(hit, match);
+    results.concat(hits.map((h: any): InlineQueryResultArticle => {
+      const { title, iv, url } = getText(h, !h.hierarchy.lvl2);
+      const message_text = `${title}${ZWSP}\n\n${url}`;
+      const entities: MessageEntity[] = [
+        { type: "bold", offset: 0, length: title.length },
+        { type: "text_link", offset: title.length, length: 1, url: iv },
+      ];
       return {
-        id: hit.objectID,
+        id: h.objectID,
         type: "article",
         title,
-        description,
-        input_message_content: { message_text: text, entities },
+        description: `${title}: ${
+          h.content ?? "Title matches the search query"
+        }`,
+        input_message_content: { message_text, entities },
       };
-    }),
-    { cache_time: 0 }, // 24 hours
+    })),
+    { cache_time: 24 * 60 * 60 }, // 24 hours (algolia re-indexing)
   );
 });
 
@@ -78,58 +94,66 @@ if (Deno.env.get("DEBUG")) {
   serve(webhookCallback(bot, "std/http"));
 }
 
-function renderMessage(hit: Hit, match: QueryMatch) {
-  const { title, iv, url } = getText(hit, { strip: !hit.hierarchy.lvl2 });
-  let text: string;
-  let description: string;
-  let entities: MessageEntity[];
-  if (match.original !== match.query) {
-    text = description = replaceQueryMatch(match, url);
-    const offset = match.index - 1;
-    entities = [{ type: "text_link", offset, length: 1, url: iv }];
-  } else {
-    const content = hit.content ?? "Title matches the search query";
-    text = `${title}${ZWSP}\n\n${url}`;
-    description = `${title}: ${content}`;
-    entities = [
-      { type: "bold", offset: 0, length: title.length },
-      { type: "text_link", offset: title.length, length: 1, url: iv },
-    ];
-  }
-  return { title, text, description, entities };
+function getTitle(hit: any) {
+  const h = hit.hierarchy;
+  const headers = [h.lvl1, h.lvl2, h.lvl3, h.lvl4, h.lvl5, h.lvl6];
+  return headers.filter((t) => !!t).join(" / ");
 }
 
-function getText(hit: Hit, options: { strip: boolean }) {
+function getText(hit: any, strip: boolean) {
   const title = getTitle(hit);
-  const url = options.strip ? stripAnchor(hit.url) : hit.url;
+  const url = strip ? stripAnchor(hit.url) : hit.url;
   const iv = `https://t.me/iv?rhash=ca1d23e111bcad&url=${url}`;
   return { title, iv, url };
 }
-function getTitle(hit: Hit) {
-  const h = hit.hierarchy;
-  const headers = [h.lvl1, h.lvl2, h.lvl3, h.lvl4, h.lvl5, h.lvl6];
-  return headers.filter((t) => !!t).join(" » ");
-}
+
 function stripAnchor(url: string) {
   const index = url.lastIndexOf("#");
-  return index >= 0 ? url.substring(0, index) : url;
+  return index > 0 ? url.substring(0, index) : url;
 }
 
-interface QueryMatch {
-  original: string;
-  query: string;
-  index: number;
+function whatToSearch(query: string): string {
+  const match = query.match(/\+([^\+]+)$/);
+  if (match) {
+    return match[1];
+  }
+  return query;
 }
-function matchQuery(original: string): QueryMatch {
-  const match = /\+([^\+]+)\+/g.exec(original);
-  if (match !== null) return { original, query: match[0], index: match.index };
-  const index = original.indexOf("+");
-  if (index >= 0) return { original, query: original.substring(index), index };
-  return { original, query: original, index: 0 };
-}
-function replaceQueryMatch(match: QueryMatch, text: string) {
-  if (match.original === match.query) return text;
-  const l = match.index;
-  const r = match.index + match.query.length;
-  return match.original.substring(0, l) + text + match.original.substring(r);
+async function makeReplacements(
+  text: string,
+): Promise<[string, MessageEntity[], string]> {
+  const searchQueries = new Array<string>();
+  text.replace(replacementExp, (_, s, o) => {
+    s = s.split("|");
+    searchQueries.push(s[0]);
+    return s;
+  });
+  const urls = new Array<string>();
+  for (const query of searchQueries) {
+    urls.push((await search(query)).hits[0].url);
+  }
+  let matches = 0;
+  let lengthChange = 0;
+  const pathnames = new Array<string>();
+  const entities = new Array<MessageEntity>();
+  return [
+    text.replace(replacementExp, (_, s, o) => {
+      const url = urls[matches];
+      const pathname = new URL(url).pathname;
+      pathnames.push(pathname);
+      const untouchedS = s;
+      s = s.split("|")[1] || pathname;
+      entities.push({
+        offset: (matches == 0 ? o : o - (matches * 2)) + lengthChange,
+        length: s.length,
+        type: "text_link",
+        url,
+      });
+      matches++;
+      lengthChange += s.length - untouchedS.length;
+      return s;
+    }),
+    entities,
+    pathnames.join(", "),
+  ];
 }
