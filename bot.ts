@@ -123,14 +123,15 @@ async function makeReplacements(
   text: string,
 ): Promise<[string, MessageEntity[], string]> {
   const searchQueries = new Array<string>();
+  text = `${ZWSP}${text}`;
   text.replace(replacementExp, (_, s, o) => {
     s = s.split("|");
     searchQueries.push(s[0]);
     return s;
   });
-  const urls = new Array<string>();
+  const hits = new Array<any>();
   for (const query of searchQueries) {
-    urls.push((await search(query)).hits[0].url);
+    hits.push((await search(query)).hits[0]);
   }
   let matches = 0;
   let lengthChange = 0;
@@ -138,11 +139,15 @@ async function makeReplacements(
   const entities = new Array<MessageEntity>();
   return [
     text.replace(replacementExp, (_, s, o) => {
-      const url = urls[matches];
+      const hit = hits[matches];
+      const { title, url, iv } = getText(hit, !hit.hierarchy.lvl2);
+      if (matches == 0) {
+        entities.push({ offset: 0, length: 1, type: "text_link", url: iv });
+      }
       const pathname = new URL(url).pathname;
       pathnames.push(pathname);
       const untouchedS = s;
-      s = s.split("|")[1] || pathname;
+      s = s.split("|")[1] || title;
       entities.push({
         offset: (matches == 0 ? o : o - (matches * 2)) + lengthChange,
         length: s.length,
