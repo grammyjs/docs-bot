@@ -46,12 +46,27 @@ async function search(query: string) {
   return await res.json();
 }
 
+const replacementExp = /\+([^+]+(?:\|[^+]|))\+/g;
+
 bot.on("inline_query", async (ctx) => {
   const query = ctx.inlineQuery.query;
-  const { hits } = await search(query);
+  const results = new Array<InlineQueryResultArticle>();
+  if (query.match(replacementExp)) {
+    const [message_text, entities, description] = await makeReplacements(query);
+    results.push(
+      {
+        id: crypto.randomUUID(),
+        type: "article",
+        title: "Make replacements",
+        description,
+        input_message_content: { message_text, entities },
+      },
+    );
+  }
+  const { hits } = await search(whatToSearch(query));
   hits.length = Math.min(50, hits.length);
   await ctx.answerInlineQuery(
-    hits.map((h: any): InlineQueryResultArticle => {
+    results.concat(hits.map((h: any): InlineQueryResultArticle => {
       const { title, iv, url } = getText(h, !h.hierarchy.lvl2);
       const message_text = `${title}${ZWSP}\n\n${url}`;
       const entities: MessageEntity[] = [
@@ -67,7 +82,7 @@ bot.on("inline_query", async (ctx) => {
         }`,
         input_message_content: { message_text, entities },
       };
-    }),
+    })),
     { cache_time: 24 * 60 * 60 }, // 24 hours (algolia re-indexing)
   );
 });
@@ -95,4 +110,50 @@ function getText(hit: any, strip: boolean) {
 function stripAnchor(url: string) {
   const index = url.lastIndexOf("#");
   return index > 0 ? url.substring(0, index) : url;
+}
+
+function whatToSearch(query: string): string {
+  const match = query.match(/\+([^\+]+)$/);
+  if (match) {
+    return match[1];
+  }
+  return query;
+}
+async function makeReplacements(
+  text: string,
+): Promise<[string, MessageEntity[], string]> {
+  const searchQueries = new Array<string>();
+  text.replace(replacementExp, (_, s, o) => {
+    s = s.split("|");
+    searchQueries.push(s[0]);
+    return s;
+  });
+  const urls = new Array<string>();
+  for (const query of searchQueries) {
+    urls.push((await search(query)).hits[0].url);
+  }
+  let matches = 0;
+  let lengthChange = 0;
+  const pathnames = new Array<string>();
+  const entities = new Array<MessageEntity>();
+  return [
+    text.replace(replacementExp, (_, s, o) => {
+      const url = urls[matches];
+      const pathname = new URL(url).pathname;
+      pathnames.push(pathname);
+      const untouchedS = s;
+      s = s.split("|")[1] || pathname;
+      entities.push({
+        offset: (matches == 0 ? o : o - (matches * 2)) + lengthChange,
+        length: s.length,
+        type: "text_link",
+        url,
+      });
+      matches++;
+      lengthChange += s.length - untouchedS.length;
+      return s;
+    }),
+    entities,
+    pathnames.join(", "),
+  ];
 }
