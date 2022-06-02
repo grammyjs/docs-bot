@@ -35,6 +35,8 @@ body: //main
 # ... and remove sr content and line number blocks ...
 @remove: //span[has-class("sr-only")]
 @remove: //div[has-class("line-numbers")]
+# ...and remove open in new window icon text
+@remove: //span[has-class("external-link-icon-sr-only")]
 
 # Then, we group code-group-items with their titles:
 # TypeScript > Code, JavasScript > Code
