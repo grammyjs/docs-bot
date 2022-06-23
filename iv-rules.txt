@@ -64,6 +64,8 @@ body: //main
 
 # Move <img> from <p> to outside ...
 @split_parent: //p/img
+# ...and change webp image extensions to jpeg
+@replace(".webp", ".jpeg"): //img[ends-with(@src, ".webp")]/@src
 
 # ... and apply bold titles for of <details>.
 @wrap_inner(<b>): //summary
