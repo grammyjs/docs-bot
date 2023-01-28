@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-explicit-any camelcase
 import {
   Bot,
   InlineKeyboard,
@@ -45,6 +44,12 @@ async function search(query: string) {
   const res = await fetch(SEARCH_URL, { method: "POST", headers, body });
   return await res.json();
 }
+interface Hit {
+  objectID: string;
+  content: string;
+  url: string;
+  hierarchy: Record<`lvl${1 | 2 | 3 | 4 | 5 | 6}`, string>;
+}
 
 const replacementExp = /\+([^+]+(?:\|[^+]|))\+/g;
 
@@ -66,7 +71,7 @@ bot.on("inline_query", async (ctx) => {
   const { hits } = await search(whatToSearch(query));
   hits.length = Math.min(50, hits.length);
   await ctx.answerInlineQuery(
-    results.concat(hits.map((h: any): InlineQueryResultArticle => {
+    results.concat(hits.map((h: Hit): InlineQueryResultArticle => {
       const { title, iv, url } = getText(h, !h.hierarchy.lvl2);
       const message_text = `${title}${ZWSP}\n\n${url}`;
       const entities: MessageEntity[] = [
@@ -94,13 +99,13 @@ if (Deno.env.get("DEBUG")) {
   serve(webhookCallback(bot, "std/http"));
 }
 
-function getTitle(hit: any) {
+function getTitle(hit: Hit) {
   const h = hit.hierarchy;
   const headers = [h.lvl1, h.lvl2, h.lvl3, h.lvl4, h.lvl5, h.lvl6];
   return headers.filter((t) => !!t).join(" / ");
 }
 
-function getText(hit: any, strip: boolean) {
+function getText(hit: Hit, strip: boolean) {
   const title = getTitle(hit);
   const url = strip ? stripAnchor(hit.url) : hit.url;
   const iv = `https://t.me/iv?rhash=ca1d23e111bcad&url=${url}`;
@@ -123,14 +128,15 @@ async function makeReplacements(
   text: string,
 ): Promise<[string, MessageEntity[], string]> {
   const searchQueries = new Array<string>();
+  text = `${ZWSP}${text}`;
   text.replace(replacementExp, (_, s, o) => {
     s = s.split("|");
     searchQueries.push(s[0]);
     return s;
   });
-  const urls = new Array<string>();
+  const hits = new Array<Hit>();
   for (const query of searchQueries) {
-    urls.push((await search(query)).hits[0].url);
+    hits.push((await search(query)).hits[0]);
   }
   let matches = 0;
   let lengthChange = 0;
@@ -138,11 +144,15 @@ async function makeReplacements(
   const entities = new Array<MessageEntity>();
   return [
     text.replace(replacementExp, (_, s, o) => {
-      const url = urls[matches];
+      const hit = hits[matches];
+      const { title, url, iv } = getText(hit, !hit.hierarchy.lvl2);
+      if (matches == 0) {
+        entities.push({ offset: 0, length: 1, type: "text_link", url: iv });
+      }
       const pathname = new URL(url).pathname;
       pathnames.push(pathname);
       const untouchedS = s;
-      s = s.split("|")[1] || pathname;
+      s = s.split("|")[1] || title;
       entities.push({
         offset: (matches == 0 ? o : o - (matches * 2)) + lengthChange,
         length: s.length,
