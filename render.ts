@@ -37,11 +37,13 @@ export function render(
   texts: string[],
   links: Link[],
 ): InlineQueryResultArticle {
+  const content = renderInputMessageContent(texts, links);
   return {
     id: crypto.randomUUID(),
     type: "article",
     title: `Share ${links.length === 1 ? "link" : `${links.length} links`}`,
-    input_message_content: renderInputMessageContent(texts, links),
+    description: content.message_text,
+    input_message_content: content,
   };
 }
 export function renderInputMessageContent(
