@@ -75,12 +75,14 @@ export function renderNext(
   const { message_text, entities = [] } = existing;
   const { text, url } = getLink(hit);
   const labelOrText = label ?? text;
+  const resultText = message_text + labelOrText;
   return {
     id: crypto.randomUUID(),
     type: "article",
     title: text,
+    description: resultText,
     input_message_content: {
-      message_text: message_text + labelOrText,
+      message_text: resultText,
       entities: [...entities, {
         type: "text_link",
         offset: message_text.length,
