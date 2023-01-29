@@ -6,9 +6,14 @@ import {
 import { type Hit } from "./search.ts";
 
 const ZWSP = "\u200b"; // zero-width space character
+const TYPE = { type: "text_link" } as const;
 
+export interface QueryHit {
+  query: { query: string; label?: string };
+  hit: Hit;
+}
 export interface Link {
-  text: string;
+  text?: string;
   url: string;
 }
 
@@ -24,46 +29,51 @@ export function renderSingle(h: Hit): InlineQueryResultArticle {
     input_message_content: message,
   };
 }
-function renderSingleInputMessageContent({ text, url }: Link) {
+function renderSingleInputMessageContent({ text, url }: Required<Link>) {
   const message_text = `${text}${ZWSP}\n\n${url}`;
   const entities: MessageEntity[] = [
     { type: "bold", offset: 0, length: text.length },
-    { type: "text_link", offset: text.length, length: 1, url: toIV(url) },
+    { ...TYPE, offset: text.length, length: 1, url: toIV(url) },
   ];
   return { message_text, entities };
 }
 
 export function render(
   texts: string[],
-  links: Link[],
+  hits: QueryHit[],
 ): InlineQueryResultArticle {
-  const content = renderInputMessageContent(texts, links);
+  const content = renderInputMessageContent(texts, hits);
   return {
     id: crypto.randomUUID(),
     type: "article",
-    title: `Share ${links.length === 1 ? "link" : `${links.length} links`}`,
+    title: `Share ${hits.length === 1 ? "link" : `${hits.length} links`}`,
     description: content.message_text,
     input_message_content: content,
   };
 }
 export function renderInputMessageContent(
   texts: string[],
-  links: Link[],
+  hits: QueryHit[],
 ): InputTextMessageContent {
   let message = "";
   const entities: MessageEntity[] = [];
+  if (hits.length > 0) {
+    message += ZWSP;
+    entities.push({
+      ...TYPE,
+      offset: 0,
+      length: 1,
+      url: toIV(hits[0].hit.url),
+    });
+  }
   for (let i = 0; i < texts.length; i++) {
     message += texts[i];
-    if (i < links.length) {
-      let offset = message.length;
-      const { text, url } = links[i];
-      if (i === 0) {
-        message += ZWSP;
-        offset = message.length;
-        entities.push({ type: "text_link", offset, length: 1, url: toIV(url) });
-      }
+    if (i < hits.length) {
+      const offset = message.length;
+      const { query, hit } = hits[i];
+      const text = query.label ?? getLabel(query.query, hit);
       message += text;
-      entities.push({ type: "text_link", offset, length: text.length, url });
+      entities.push({ ...TYPE, offset, length: text.length, url: hit.url });
     }
   }
   return { message_text: message, entities };
@@ -71,13 +81,11 @@ export function renderInputMessageContent(
 
 export function renderNext(
   existing: InputTextMessageContent,
-  hit: Hit,
-  label?: string,
+  { query, hit }: QueryHit,
 ): InlineQueryResultArticle {
   const { message_text, entities = [] } = existing;
-  const { text, url } = getLink(hit);
-  const labelOrText = label ?? text;
-  const resultText = message_text + labelOrText;
+  const text = query.label ?? getLabel(query.query, hit);
+  const resultText = message_text + text;
   return {
     id: crypto.randomUUID(),
     type: "article",
@@ -88,19 +96,28 @@ export function renderNext(
       entities: [...entities, {
         type: "text_link",
         offset: message_text.length,
-        length: labelOrText.length,
-        url,
+        length: text.length,
+        url: hit.url,
       }],
     },
   };
 }
 
-function getLink(hit: Hit, strip = !hit.hierarchy.lvl2): Link {
+function getLabel(query: string, hit: Hit) {
+  if (query.endsWith("!")) {
+    return query.substring(0, query.length - 1);
+  } else if (query.endsWith("/")) {
+    return hit.url;
+  } else {
+    return getTitle(hit);
+  }
+}
+function getLink(hit: Hit, strip = !hit.hierarchy.lvl2): Required<Link> {
   const text = getTitle(hit);
   const url = strip ? stripAnchor(hit.url) : hit.url;
   return { text, url };
 }
-export function getTitle(hit: Hit) {
+function getTitle(hit: Hit) {
   const h = hit.hierarchy;
   const headers = [h.lvl1, h.lvl2, h.lvl3, h.lvl4, h.lvl5, h.lvl6];
   return headers.filter((t) => !!t).join(" / ");

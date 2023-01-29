@@ -5,44 +5,66 @@ import {
   serve,
   webhookCallback,
 } from "./deps.ts";
+import { parse } from "./parse.ts";
 import {
-  getTitle,
   render,
   renderInputMessageContent,
   renderNext,
   renderSingle,
 } from "./render.ts";
-import { parse } from "./parse.ts";
 import { search, searchOne } from "./search.ts";
 
 const token = Deno.env.get("BOT_TOKEN");
 if (token === undefined) throw new Error("Missing BOT_TOKEN");
 
+const searchKeyboard = new InlineKeyboard()
+  .switchInlineCurrent("Search here").row()
+  .switchInline("Share article");
+
 const bot = new Bot(token);
+
+bot.command(
+  "help",
+  (ctx) =>
+    ctx.reply(
+      `Welcome to the grammY documentation bot!
+
+This bot uses the search that you find at the top of \
+grammy.dev. Type @${ctx.me.username} followed by a \
+search query to quickly share links to grammY docs.
+
+If you want to send a message with a link to the docs \
+embedded in it, you can surround your +search query+ \
+by '+' characters. This will insert the title of the \
+page as a text link to the respective URL.
+– Use +search query|this link+ to send a custom link text.
+– Use +search query!+ with a '!' suffix to use the \
+search query as the link text.
+– Use +search query/+ with a '/' suffix to share the \
+URL itself instead of the page title.
+
+Join @grammyjs!`,
+      { reply_markup: searchKeyboard },
+    ),
+);
 
 bot.drop((ctx) => ctx.msg?.via_bot?.id === ctx.me.id)
   .on("message", async (ctx) => {
-    await ctx.reply("I can search for grammY documentation inline.", {
-      reply_markup: new InlineKeyboard()
-        .switchInlineCurrent("Search here").row()
-        .switchInline("Share article"),
+    await ctx.reply("I can search for grammY documentation inline. /help", {
+      reply_markup: searchKeyboard,
     });
   });
 
 bot.on("inline_query", async (ctx) => {
   const { query, offset } = ctx.inlineQuery;
   const { currentQuery, texts, completedQueries } = parse(query);
-  const completed = await Promise.all(
+  const links = await Promise.all(
     completedQueries.map(async (query) => ({
       query,
       hit: await searchOne(query.query),
     })),
   );
   let nextOffset = offset;
-  const links = completed.map(({ query, hit }) => ({
-    text: query.label ?? getTitle(hit),
-    url: hit.url,
-  }));
   let results: InlineQueryResultArticle[];
   if (currentQuery === undefined) {
     // only completed queries, render them
@@ -60,7 +82,9 @@ bot.on("inline_query", async (ctx) => {
     } else {
       // render and continue to search
       const content = renderInputMessageContent(texts, links);
-      results = hits.map((hit) => renderNext(content, hit, currentQuery.label));
+      results = hits.map((hit) =>
+        renderNext(content, { query: currentQuery, hit })
+      );
     }
   }
   await ctx.answerInlineQuery(results, {
