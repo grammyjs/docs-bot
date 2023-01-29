@@ -25,10 +25,7 @@ export function parse(query: string) {
       const part = parts[i];
       if (i % 2 === 0) result.texts.push(part);
       else {
-        let [query, label] = part.split("|");
-        if (label === undefined && query.endsWith("!")) {
-          label = query.substring(0, query.length - 1);
-        }
+        const [query, label] = part.split("|");
         result.completedQueries.push({ query, ...{ label } });
       }
     }
