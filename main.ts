@@ -27,7 +27,7 @@ bot.command(
   "help",
   (ctx) =>
     ctx.reply(
-      `Welcome to the grammY documentation search bot!
+      `Welcome to the grammY documentation bot!
 
 This bot uses the search that you find at the top of \
 grammy.dev. Type @${ctx.me.username} followed by a \
