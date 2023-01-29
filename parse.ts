@@ -27,7 +27,7 @@ export function parse(query: string) {
       else {
         let [query, label] = part.split("|");
         if (label === undefined && query.endsWith("!")) {
-          label = query;
+          label = query.substring(0, query.length - 1);
         }
         result.completedQueries.push({ query, ...{ label } });
       }
