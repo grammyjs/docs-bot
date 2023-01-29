@@ -40,8 +40,8 @@ page as a text link to the respective URL.
 – Use +search query|this link+ to send a custom link text.
 – Use +search query!+ with a '!' suffix to use the \
 search query as the link text.
-– Use +search query/+ to share the URL itself instead \
-of the page title.
+– Use +search query/+ with a '/' suffix to share the \
+URL itself instead of the page title.
 
 Join @grammyjs!`,
       { reply_markup: searchKeyboard },
