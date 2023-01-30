@@ -5,6 +5,7 @@ import {
 } from "./deps.ts";
 import { type Hit } from "./search.ts";
 
+const MAX_DESC_LEN = 300; // max number of characters in result descriptions
 const ZWSP = "\u200b"; // zero-width space character
 const TYPE = { type: "text_link" } as const;
 
@@ -25,7 +26,8 @@ export function renderSingle(h: Hit): InlineQueryResultArticle {
     id: h.objectID,
     type: "article",
     title,
-    description: `${title}: ${h.content ?? "Title matches the search query"}`,
+    description: `${title}: ${h.content ?? "Title matches the search query"}`
+      .substring(0, MAX_DESC_LEN),
     input_message_content: message,
   };
 }
@@ -47,7 +49,7 @@ export function render(
     id: crypto.randomUUID(),
     type: "article",
     title: `Share ${hits.length === 1 ? "link" : `${hits.length} links`}`,
-    description: content.message_text,
+    description: content.message_text.substring(0, MAX_DESC_LEN),
     input_message_content: content,
   };
 }
@@ -90,7 +92,7 @@ export function renderNext(
     id: crypto.randomUUID(),
     type: "article",
     title: text,
-    description: resultText,
+    description: resultText.substring(0, MAX_DESC_LEN),
     input_message_content: {
       message_text: resultText,
       entities: [...entities, {
