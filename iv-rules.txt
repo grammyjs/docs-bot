@@ -2,11 +2,11 @@
 ~allowed_origin: "https://grammy.dev"
 
 # Define paths structures
-?path: /((id|es)/)?guide/.*
-?path: /((id|es)/)?advanced/.*
-?path: /((id|es)/)?plugins/.*
-?path: /((id|es)/)?resources/.*
-?path: /((id|es)/)?hosting/.*
+?path: /(zh/)?guide/.*
+?path: /(zh/)?advanced/.*
+?path: /(zh/)?plugins/.*
+?path: /(zh/)?resources/.*
+?path: /(zh/)?hosting/.*
 
 # Title is always the only h1 element
 @replace("#", ""): //h1
