@@ -15,41 +15,45 @@ site_name: "grammY Docs"
 channel: "@grammyjs_news"
 
 # Simply picking up main does most of the work
-body: //main
+body: //div[has-class("content-container")]
 # Just gotta fix some spacing in code blocks ...
 @replace("\n$", ""): //code
 # ... and rewrite links to stay within IV ...
 @replace("^/", "https://t.me/iv?rhash=ca1d23e111bcad&url=https%3A%2F%2Fgrammy.dev%2F"): //a/@href
 # ... as well as adding anchors ...
-@set_attr(name, @href): //a[has-class("header-anchor")]
+$subheader: //h2
+$subheader+: //h3
+$subheader+: //h4
+$subheader+: //h5
+$subheader+: //h6
+
+@wrap_inner(<span>, "class", "header-text"): $subheader
+@prepend(" "): //span[has-class("header-text")]
+
+@before_el("./../self::span"): //a[has-class("header-anchor")]
+@prepend("#"): $$
+@set_attr(name, @href): $$
+
 # ... and stripping leading hashes for anchor names ...
 @replace("^#", ""): $$/@name
-# ... along with "open in new window" hints from links ...
-@remove: //a/span
-# ... and adding data-language attribute to pre
-@set_attr(data-language, @class): //pre
-@replace("language-", ""): $$/@data-language
 
 # We also fix prev/next links ...
-@detach: //span[has-class("prev")] # same as: @detach: //span[has-class("next")]
+@split_parent: //span[has-class("desc")]
+@append(": "): $$
+# ... and last updated ...
+
+@set_attr("class", "last-updated-time"): //time
+@append(@datetime): //time
+@replace("T", " "): $$
+@replace(".000Z", " UTC"): $$
+@replace_tag(<span>): //time
+
 # ... and remove sr content and line number blocks ...
 @remove: //span[has-class("sr-only")]
 @remove: //div[has-class("line-numbers")]
 # ...and remove open in new window icon text
 @remove: //span[has-class("external-link-icon-sr-only")]
 
-# Then, we group code-group-items with their titles:
-# TypeScript > Code, JavasScript > Code
-@replace_tag(<details>): //div[has-class("code-group-item")]
-@replace_tag(<summary>): //ul[@class="code-group__ul"]/li
-
-@map( //details[has-class("code-group-item")] ) {
-  $details: $@
-  @prepend_to($details): (//ul[@class="code-group__ul"]/summary)[position()<2]
-  @if ($details[has-class("code-group-item__active")]) {
-    @set_attr(open, 1): $details
-  } 
-}
 
 # Convert tip, warning, danger blocks to details ...
 @replace_tag(<details>): //div[has-class("tip")]
@@ -58,9 +62,51 @@ body: //main
 @set_attr(open, 1): $$
 @replace_tag(<details>): //div[has-class("danger")]
 @set_attr(open, 1): $$
+@replace_tag(<details>): //div[has-class("details")]
+@set_attr(open, 0): $$
 
 # ... and set their title as title of <details>.
-@replace_tag(<summary>): //p[has-class("custom-container-title")]
+@replace_tag(<summary>): //p[has-class("custom-block-title")]
+
+# ... and adding data-language attribute to pre
+@map( //div[span[has-class("lang")]] ) {
+  $element: $@
+  $class: $@/@class
+  
+  @set_attr("data-language", $class): $element//pre
+ 
+  @replace("language-", ""): $$/@data-language
+  @replace(" line-numbers-mode", ""): $$
+}
+
+# ... remove unnecesarry elements
+@remove: //div[has-class("line-numbers-wrapper")]
+@remove: //span[has-class("lang")]
+@remove: //button[has-class("copy")]
+
+# Then, we group code-block with their titles:
+# TypeScript > Code, JavasScript > Code
+
+@replace_tag(<details>): //div[has-class("blocks")]
+@replace_tag(<summary>): //div[has-class("tabs")]/label
+
+@detach: //details[has-class("blocks")]/div
+@remove: //details[not(node() or normalize-space())]
+
+@map( //details[has-class("blocks")] ) {
+  $details: $@
+  
+  @prepend_to($details): (//div[@class="tabs"]/summary)[position()<2]
+  
+  @set_attr("is-active", @data-language): $details//pre
+  @replace("^[a-z0-9]+ ", ""): $$/@is-active
+
+  @if ($details//pre[@is-active="active"]) {
+    @set_attr(open, 1): $details
+  } 
+}
+
+@replace(" active", ""): //pre/@data-language
 
 # Move <img> from <p> to outside ...
 @split_parent: //p/img
