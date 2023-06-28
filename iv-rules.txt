@@ -46,7 +46,7 @@ body: //main
 @map( //details[has-class("code-group-item")] ) {
   $details: $@
   @prepend_to($details): (//ul[@class="code-group__ul"]/summary)[position()<2]
-  @if ( $details[@aria-selected="true"] ) {
+  @if ( $details//button[@ariaexpanded="true"] ) {
     @set_attr(open, 1): $details
   }
 }
