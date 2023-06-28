@@ -69,3 +69,6 @@ body: //main
 
 # ... and apply bold titles for of <details>.
 @wrap_inner(<b>): //summary
+
+# Remove last updated
+@remove: //div[has-class("meta-item last-updated")]
