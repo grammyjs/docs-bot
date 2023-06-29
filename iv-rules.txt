@@ -32,8 +32,8 @@ body: //main
 
 # We also fix prev/next links ...
 @detach: //span[has-class("prev")] # same as: @detach: //span[has-class("next")]
-@prepend("Previous page:"): $$
-@prepend("Next page:"): //span[has-class("next")]
+@prepend("←"): $$
+@append("→"): //span[has-class("next")]
 @prepend_to(//footer): //nav[has-class("page-nav")]
 @after(<br>): $$
 # ... and remove sr content and line number blocks ...
