@@ -50,9 +50,9 @@ body: //main
 @map( //details[has-class("code-group-item")] ) {
   $details: $@
   @prepend_to($details): (//ul[@class="code-group__ul"]/summary)[position()<2]
-  @if ($details[has-class("code-group-item__active")]) {
+  @if ( $details//button[@ariaexpanded="true"] ) {
     @set_attr(open, 1): $details
-  } 
+  }
 }
 
 # Convert tip, warning, danger blocks to details ...
