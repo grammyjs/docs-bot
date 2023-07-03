@@ -8,6 +8,7 @@ import { type Hit } from "./search.ts";
 const MAX_DESC_LEN = 300; // max number of characters in result descriptions
 const ZWSP = "\u200b"; // zero-width space character
 const TYPE = { type: "text_link" } as const;
+const IV_RHASH = "d32ab671cec0eb";
 
 export interface QueryHit {
   query: { query: string; label?: string };
@@ -129,5 +130,5 @@ function stripAnchor(url: string) {
   return index > 0 ? url.substring(0, index) : url;
 }
 function toIV(url: string) {
-  return `https://t.me/iv?rhash=ca1d23e111bcad&url=${url}`;
+  return `https://t.me/iv?rhash=${IV_RHASH}&url=${url}`;
 }

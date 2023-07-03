@@ -54,7 +54,6 @@ $subheader+: //h6
 # ...and remove open in new window icon text
 @remove: //span[has-class("external-link-icon-sr-only")]
 
-
 # Convert tip, warning, danger blocks to details ...
 @replace_tag(<details>): //div[has-class("tip")]
 @set_attr(open, 1): $$
@@ -115,3 +114,6 @@ $subheader+: //h6
 
 # ... and apply bold titles for of <details>.
 @wrap_inner(<b>): //summary
+
+# Remove last updated
+@remove: //div[has-class("meta-item last-updated")]
