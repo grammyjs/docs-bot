@@ -111,6 +111,8 @@ $subheader+: //h6
 @split_parent: //p/img
 # ...and change webp image extensions to jpeg
 @replace(".webp", ".jpeg"): //img[ends-with(@src, ".webp")]/@src
+# ...and change svg image extensions to png
+@replace(".svg", ".png"): //img[ends-with(@src, ".svg")]/@src
 
 # ... and apply bold titles for of <details>.
 @wrap_inner(<b>): //summary
