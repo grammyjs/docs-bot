@@ -62,9 +62,7 @@ $subheader+: //h6
 
 # ... and add @data-language attribute to pre ...
 @map( //div[span[has-class("lang")]] ) {
-  @set_attr("data-language", $@/@class): $@//pre
-  @replace("language-", ""): $$/@data-language
-  @replace(" line-numbers-mode", ""): $$
+  @set_attr("data-language", $@/span[has-class("lang")]): $@//pre
 }
 
 # ... and remove unnecesarry elements.
