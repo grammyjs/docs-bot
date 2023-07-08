@@ -13,13 +13,13 @@
 title:  //h1
 site_name: "grammY Docs"
 channel: "@grammyjs_news"
-
-# Simply picking up main does most of the work
 body: //div[has-class("content-container")]
+
 # Just gotta fix some spacing in code blocks ...
 @replace("\n$", ""): //code
 # ... and rewrite links to stay within IV ...
 @replace("^/", "https://t.me/iv?rhash=d32ab671cec0eb&url=https%3A%2F%2Fgrammy.dev%2F"): //a/@href
+
 # ... as well as adding anchors ...
 $subheader: //h2
 $subheader+: //h3
@@ -27,9 +27,8 @@ $subheader+: //h4
 $subheader+: //h5
 $subheader+: //h6
 
-@wrap_inner(<span>, "class", "header-text"): $subheader
-@prepend(" "): //span[has-class("header-text")]
-
+@wrap_inner(<span>): $subheader
+@prepend(" "): $@
 @before_el("./../self::span"): //a[has-class("header-anchor")]
 @prepend("#"): $$
 @set_attr(name, @href): $$
@@ -40,19 +39,13 @@ $subheader+: //h6
 # We also fix prev/next links ...
 @split_parent: //span[has-class("desc")]
 @append(": "): $$
-# ... and last updated ...
 
-@set_attr("class", "last-updated-time"): //time
+# ... and fix last updated time...
 @append(@datetime): //time
-@replace("T", " "): $$
-@replace(".000Z", " UTC"): $$
-@replace_tag(<span>): //time
+@replace("T([0-9:]+).000Z", " $1 UTC"): //time
 
-# ... and remove sr content and line number blocks ...
-@remove: //span[has-class("sr-only")]
+# ... and remove line numbers of code blocks.
 @remove: //div[has-class("line-numbers")]
-# ...and remove open in new window icon text
-@remove: //span[has-class("external-link-icon-sr-only")]
 
 # Convert tip, warning, danger blocks to details ...
 @replace_tag(<details>): //div[has-class("tip")]
@@ -64,28 +57,22 @@ $subheader+: //h6
 @replace_tag(<details>): //div[has-class("details")]
 @set_attr(open, 0): $$
 
-# ... and set their title as title of <details>.
+# ... and set their title as title of <details> ...
 @replace_tag(<summary>): //p[has-class("custom-block-title")]
 
-# ... and adding data-language attribute to pre
+# ... and add @data-language attribute to pre ...
 @map( //div[span[has-class("lang")]] ) {
-  $element: $@
-  $class: $@/@class
-  
-  @set_attr("data-language", $class): $element//pre
- 
+  @set_attr("data-language", $@/@class): $@//pre
   @replace("language-", ""): $$/@data-language
   @replace(" line-numbers-mode", ""): $$
 }
 
-# ... remove unnecesarry elements
+# ... and remove unnecesarry elements.
 @remove: //div[has-class("line-numbers-wrapper")]
 @remove: //span[has-class("lang")]
 @remove: //button[has-class("copy")]
 
-# Then, we group code-block with their titles:
-# TypeScript > Code, JavasScript > Code
-
+# Group code blocks with their titles
 @replace_tag(<details>): //div[has-class("blocks")]
 @replace_tag(<summary>): //div[has-class("tabs")]/label
 
@@ -94,28 +81,21 @@ $subheader+: //h6
 
 @map( //details[has-class("blocks")] ) {
   $details: $@
-  
-  @prepend_to($details): (//div[@class="tabs"]/summary)[position()<2]
-  
-  @set_attr("is-active", @data-language): $details//pre
-  @replace("^[a-z0-9]+ ", ""): $$/@is-active
 
-  @if ($details//pre[@is-active="active"]) {
+  @prepend_to($@): (//div[has-class("tabs")]/summary)[position()<2]
+
+  # ... open the code block if it's active.
+  @if ( $details/div[has-class("active")] ) {
     @set_attr(open, 1): $details
   } 
 }
 
-@replace(" active", ""): //pre/@data-language
-
 # Move <img> from <p> to outside ...
 @split_parent: //p/img
-# ...and change webp image extensions to jpeg
+# ... and change webp image extensions to jpeg
 @replace(".webp", ".jpeg"): //img[ends-with(@src, ".webp")]/@src
-# ...and change svg image extensions to png
+# ... and change svg image extensions to png
 @replace(".svg", ".png"): //img[ends-with(@src, ".svg")]/@src
 
 # ... and apply bold titles for of <details>.
 @wrap_inner(<b>): //summary
-
-# Remove last updated
-@remove: //div[has-class("meta-item last-updated")]
