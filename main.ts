@@ -43,12 +43,14 @@ search query as the link text.
 – Use +search query/+ with a '/' suffix to share the \
 URL itself instead of the page title.
 
-To find results in specific locales, you can use the following commands:
+To find results in specific locales, you can prepend '!locale-code' to your search query.
+- For Spanish, use '!es search query'.
+- For Indonesian, use '!id search query'.
+- For Ukrainian, use '!uk search query'.
+- For Chinese, use '!zh search query'.
 
-- For Spanish, use '!es' before your search query.
-- For Indonesian, use '!id' before your search query.
-- For Ukrainian, use '!uk' before your search query.
-- For Chinese, use '!zh' before your search query.
+You may also put them all together like this:
+'!es +search query|this link+'
 
 Join @grammyjs!`,
       { reply_markup: searchKeyboard },
@@ -64,7 +66,7 @@ bot.drop((ctx) => ctx.msg?.via_bot?.id === ctx.me.id)
 
 bot.on("inline_query", async (ctx) => {
   const { query, offset } = ctx.inlineQuery;
-  const { currentQuery, texts, completedQueries } = parse(query);
+  const { currentQuery, texts, completedQueries, lang } = parse(query);
   const links = await Promise.all(
     completedQueries.map(async (query) => ({
       query,
@@ -80,8 +82,8 @@ bot.on("inline_query", async (ctx) => {
     // pending current query
     const off = parseInt(offset, 10);
     const hits = isNaN(off)
-      ? await search(currentQuery.query)
-      : await search(currentQuery.query, { offset: off });
+      ? await search(currentQuery.query, lang)
+      : await search(currentQuery.query, lang, { offset: off });
     nextOffset += hits.length;
     if (texts.length === 0) {
       // no rendering
