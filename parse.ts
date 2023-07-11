@@ -14,7 +14,7 @@ export interface LabeledQuery {
 
 export function parse(query: string) {
   let facetFilters = "lang:en-US";
-  const re = /^!(es|id|uk|zh)(?:\s)(.*)$/i;
+  const re = /^!(en|es|id|uk|zh)(?:\s)(.*)$/i;
   const match = query.match(re);
 
   if (match) {
