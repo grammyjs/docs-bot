@@ -35,7 +35,7 @@ export async function search(
   const params = new URLSearchParams({
     query,
     ...page,
-    facetFilters: '["lang:en-US"]',
+    facetFilters: '[]',
   });
   const body = enc.encode(JSON.stringify({ params: params.toString() }));
   const res = await fetch(SEARCH_URL, { method: "POST", headers, body });
