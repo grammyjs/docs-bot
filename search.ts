@@ -26,6 +26,7 @@ export async function searchOne(query: string) {
 }
 export async function search(
   query: string,
+  lang: string,
   options?: SearchPaginationOptions,
 ): Promise<Hit[]> {
   const page = options === undefined ? undefined : {
@@ -35,7 +36,7 @@ export async function search(
   const params = new URLSearchParams({
     query,
     ...page,
-    facetFilters: '["lang:en-US"]',
+    facetFilters: `["${lang}"]`,
   });
   const body = enc.encode(JSON.stringify({ params: params.toString() }));
   const res = await fetch(SEARCH_URL, { method: "POST", headers, body });
