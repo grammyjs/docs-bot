@@ -9,6 +9,7 @@ export interface ParseResult {
 export interface LabeledQuery {
   query: string;
   label?: string;
+  locale?: string;
 }
 
 export function parse(query: string) {
@@ -33,5 +34,6 @@ export function parse(query: string) {
       result.currentQuery = result.completedQueries.pop()!;
     }
   }
+  console.log("RESULT:", result);
   return result;
 }

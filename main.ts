@@ -43,6 +43,13 @@ search query as the link text.
 – Use +search query/+ with a '/' suffix to share the \
 URL itself instead of the page title.
 
+To find results in specific locales, you can use the following commands:
+
+- For Spanish, use '!es' before your search query.
+- For Indonesian, use '!id' before your search query.
+- For Ukrainian, use '!uk' before your search query.
+- For Chinese, use '!zh' before your search query.
+
 Join @grammyjs!`,
       { reply_markup: searchKeyboard },
     ),
