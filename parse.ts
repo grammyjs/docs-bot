@@ -5,6 +5,7 @@ export interface ParseResult {
   completedQueries: LabeledQuery[];
   /** Interspersed text fragments */
   texts: string[];
+  lang: string;
 }
 export interface LabeledQuery {
   query: string;
@@ -12,9 +13,33 @@ export interface LabeledQuery {
 }
 
 export function parse(query: string) {
+  let facetFilters = "lang:en-US";
+  const re = /^!(en|es|id|uk|zh)(?:\s)(.*)$/i;
+  const match = query.match(re);
+
+  if (match) {
+    const [, lang, _query] = match;
+    switch (lang.toLowerCase()) {
+      case "es":
+        facetFilters = "lang:es-ES";
+        break;
+      case "id":
+        facetFilters = "lang:id";
+        break;
+      case "uk":
+        facetFilters = "lang:uk-UA";
+        break;
+      case "zh":
+        facetFilters = "lang:zh";
+        break;
+    }
+    query = _query;
+  }
+
   const result: ParseResult = {
     completedQueries: [],
     texts: [],
+    lang: facetFilters,
   };
   const parts = query.split("+");
   const len = parts.length;
