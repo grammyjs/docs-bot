@@ -11,7 +11,7 @@
 # Title is always the only h1 element
 @replace("#", ""): //h1
 title:  //h1
-site_name: "grammY Docs"
+site_name: "grammY docs"
 channel: "@grammyjs_news"
 body: //div[has-class("content-container")]
 
