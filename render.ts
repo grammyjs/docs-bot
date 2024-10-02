@@ -24,7 +24,8 @@ export function renderSingle(h: Hit): InlineQueryResultArticle {
   const title = link.text;
   const message = renderSingleInputMessageContent(link);
   return {
-    id: h.objectID,
+    id: h.objectID.substring(0, 15) + "|" +
+      h.objectID.substring(h.objectID.length - 15),
     type: "article",
     title,
     description: `${title}: ${h.content ?? "Title matches the search query"}`
