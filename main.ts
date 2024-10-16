@@ -2,7 +2,6 @@ import {
   Bot,
   InlineKeyboard,
   type InlineQueryResultArticle,
-  serve,
   webhookCallback,
 } from "./deps.ts";
 import { parse } from "./parse.ts";
@@ -97,5 +96,5 @@ if (Deno.env.get("DEBUG")) {
   bot.catch(console.error);
   bot.start();
 } else {
-  serve(webhookCallback(bot, "std/http"));
+  Deno.serve(webhookCallback(bot, "std/http"));
 }
