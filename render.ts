@@ -19,13 +19,23 @@ export interface Link {
   url: string;
 }
 
+/** Efficiently computes a 4-byte hash of an int32 array */
+function hash(str: string): string {
+  const nums = Array.from(str).map((c) => c.codePointAt(0)!);
+  // Inspired by JDK7's hashCode with different primes for a better distribution
+  let hash = 17;
+  for (const n of nums) hash = ((hash << 5) + (hash << 2) + hash + n) >>> 0; // hash = 37 * hash + n
+  const b = 0xff; // mask for lowest byte
+  const bytes = [hash >>> 24, (hash >> 16) & b, (hash >> 8) & b, hash & b];
+  return new TextDecoder().decode(Uint8Array.from(bytes)); // turn bytes into string
+}
+
 export function renderSingle(h: Hit): InlineQueryResultArticle {
   const link = getLink(h);
   const title = link.text;
   const message = renderSingleInputMessageContent(link);
   return {
-    id: h.objectID.substring(0, 15) + "|" +
-      h.objectID.substring(h.objectID.length - 15),
+    id: hash(h.objectID),
     type: "article",
     title,
     description: `${title}: ${h.content ?? "Title matches the search query"}`
