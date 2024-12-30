@@ -25,8 +25,7 @@ async function hash(message: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
   const hashHex = hashArray
     .map((b) => b.toString(16).padStart(2, "0"))
-    .join("") // convert bytes to hex string
-    .substring(64); // limit to 64 characters
+    .join(""); // convert bytes to hex string
   return hashHex;
 }
 
