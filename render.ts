@@ -19,23 +19,23 @@ export interface Link {
   url: string;
 }
 
-/** Efficiently computes a 4-byte hash of an int32 array */
-function hash(str: string): string {
-  const nums = Array.from(str).map((c) => c.codePointAt(0)!);
-  // Inspired by JDK7's hashCode with different primes for a better distribution
-  let hash = 17;
-  for (const n of nums) hash = ((hash << 5) + (hash << 2) + hash + n) >>> 0; // hash = 37 * hash + n
-  const b = 0xff; // mask for lowest byte
-  const bytes = [hash >>> 24, (hash >> 16) & b, (hash >> 8) & b, hash & b];
-  return new TextDecoder().decode(Uint8Array.from(bytes)); // turn bytes into string
+async function hash(message: string): Promise<string> {
+  const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8); // hash the message
+  const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("") // convert bytes to hex string
+    .substring(64); // limit to 64 characters
+  return hashHex;
 }
 
-export function renderSingle(h: Hit): InlineQueryResultArticle {
+export async function renderSingle(h: Hit): Promise<InlineQueryResultArticle> {
   const link = getLink(h);
   const title = link.text;
   const message = renderSingleInputMessageContent(link);
   return {
-    id: hash(h.objectID),
+    id: await hash(h.objectID),
     type: "article",
     title,
     description: `${title}: ${h.content ?? "Title matches the search query"}`

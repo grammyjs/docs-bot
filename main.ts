@@ -77,7 +77,7 @@ bot.on("inline_query", async (ctx) => {
     nextOffset += hits.length;
     if (texts.length === 0) {
       // no rendering
-      results = hits.map(renderSingle);
+      results = await Promise.all(hits.map(renderSingle));
     } else {
       // render and continue to search
       const content = renderInputMessageContent(texts, links);
