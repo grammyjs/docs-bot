@@ -14,13 +14,16 @@ import {
 import { search, searchOne } from "./search.ts";
 
 const token = Deno.env.get("BOT_TOKEN");
+const me = Deno.env.get("BOT_INFO");
 if (token === undefined) throw new Error("Missing BOT_TOKEN");
 
 const searchKeyboard = new InlineKeyboard()
   .switchInlineCurrent("Search here").row()
   .switchInline("Share article");
 
-const bot = new Bot(token);
+const bot = new Bot(token, {
+  botInfo: me === undefined ? undefined : JSON.parse(me),
+});
 
 bot.command(
   "help",
